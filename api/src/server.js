@@ -1,20 +1,28 @@
-/** GIA NOTES
- *
- * Use the code below to start a bare-bone express web server
+// api\src\server.js
 
 import express from 'express';
-import bodyParser from 'body-parser';
+import { graphql } from 'graphql';
 import cors from 'cors';
 import morgan from 'morgan';
 
 import * as config from './config';
+import { schema, rootValue } from './schema';
+
+const executeGraphQLRequest = async (request) => {
+  const resp = await graphql(schema, request, rootValue);
+  console.log(resp.data);
+};
+
+executeGraphQLRequest(process.argv[2]);
+
+// graphql(schema, request, rootValue);
 
 async function main() {
   const server = express();
   server.use(cors());
   server.use(morgan('dev'));
-  server.use(bodyParser.urlencoded({ extended: false }));
-  server.use(bodyParser.json());
+  server.use(express.urlencoded({ extended: false }));
+  server.use(express.json());
   server.use('/:fav.ico', (req, res) => res.sendStatus(204));
 
   // Example route
@@ -30,4 +38,6 @@ async function main() {
 
 main();
 
-*/
+// node -r esm api/src/server.js "{ currentTime }"
+
+// ["path/to/node/command", "api/src/server.js", "{ currentTime }"]
