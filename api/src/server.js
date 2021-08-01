@@ -1,19 +1,20 @@
 // api\src\server.js
 
 import express from 'express';
-import { graphql } from 'graphql';
+// import { graphql } from 'graphql';
+import { graphqlHTTP } from 'express-graphql';
 import cors from 'cors';
 import morgan from 'morgan';
 
 import * as config from './config';
 import { schema, rootValue } from './schema';
 
-const executeGraphQLRequest = async (request) => {
-  const resp = await graphql(schema, request, rootValue);
-  console.log(resp.data);
-};
+// const executeGraphQLRequest = async (request) => {
+//   const resp = await graphql(schema, request, rootValue);
+//   console.log(resp.data);
+// };
 
-executeGraphQLRequest(process.argv[2]);
+// executeGraphQLRequest(process.argv[2]);
 
 // graphql(schema, request, rootValue);
 
@@ -26,9 +27,14 @@ async function main() {
   server.use('/:fav.ico', (req, res) => res.sendStatus(204));
 
   // Example route
-  server.use('/', (req, res) => {
-    res.send('Hello World');
-  });
+  server.use(
+    '/',
+    graphqlHTTP({
+      schema,
+      rootValue,
+      graphiql: true,
+    })
+  );
 
   // This line rus the server
   server.listen(config.port, () => {
