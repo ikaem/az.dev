@@ -7,7 +7,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 
 import * as config from './config';
-import { schema, rootValue } from './schema';
+import { schema } from './schema';
 
 // const executeGraphQLRequest = async (request) => {
 //   const resp = await graphql(schema, request, rootValue);
@@ -31,7 +31,7 @@ async function main() {
     '/',
     graphqlHTTP({
       schema,
-      rootValue,
+      // rootValue,
       graphiql: true,
     })
   );
