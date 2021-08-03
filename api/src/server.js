@@ -8,6 +8,7 @@ import morgan from 'morgan';
 
 import * as config from './config';
 import { schema } from './schema';
+import pgClient from './db/pg-client';
 
 // const executeGraphQLRequest = async (request) => {
 //   const resp = await graphql(schema, request, rootValue);
@@ -19,6 +20,7 @@ import { schema } from './schema';
 // graphql(schema, request, rootValue);
 
 async function main() {
+  const { pgPool } = await pgClient();
   const server = express();
   server.use(cors());
   server.use(morgan('dev'));
@@ -32,6 +34,9 @@ async function main() {
     graphqlHTTP({
       schema,
       // rootValue,
+      context: {
+        pgPool,
+      },
       graphiql: true,
     })
   );
