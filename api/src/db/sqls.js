@@ -1,10 +1,43 @@
+export const views = {
+  tasksAndUsers: `
+    SELECT 
+      t.*,
+      u.id as "author_id",
+      u.username as "author_username",
+      u.last_name as "author_firstName",
+      u.last_name as "author_lastName",
+      u.created_at as "author_createdAt"
+    FROM azdev.tasks t
+    JOIN azdev.users u on (t.user_id = u.id)
+  `,
+};
+
 export default {
   // ------
   // SELECT
 
+  // tasksLatest: `
+  //   SELECT id, content, tags, user_id AS "userId", approach_count AS "approachCount", is_private AS "isPrivate", created_at AS "createdAt"
+  //   FROM azdev.tasks
+  //   WHERE is_private = FALSE
+  //   ORDER BY created_at DESC
+  //   LIMIT 100
+  // `,
   tasksLatest: `
-    SELECT id, content, tags, user_id AS "userId", approach_count AS "approachCount", is_private AS "isPrivate", created_at AS "createdAt"
-    FROM azdev.tasks
+    SELECT 
+      id, 
+      content, 
+      tags, 
+      user_id AS "userId", 
+      approach_count AS "approachCount", 
+      is_private AS "isPrivate", 
+      created_at AS "createdAt",
+      "author_id",
+      "author_username",
+      "author_firstName",
+      "author_lastName",
+      "author_createdAt"
+    FROM (${views.tasksAndUsers}) as tu
     WHERE is_private = FALSE
     ORDER BY created_at DESC
     LIMIT 100
@@ -19,6 +52,14 @@ export default {
 
   // $1: taskIds
   approachesForTaskIds: `
+    SELECT id, content, user_id AS "userId", task_id AS "taskId", vote_count AS "voteCount", created_at AS "createdAt"
+    FROM azdev.approaches
+    WHERE task_id = ANY ($1)
+    ORDER BY vote_count DESC, created_at DESC
+  `,
+
+  // $1: taskIds
+  tasksApproachLists: `
     SELECT id, content, user_id AS "userId", task_id AS "taskId", vote_count AS "voteCount", created_at AS "createdAt"
     FROM azdev.approaches
     WHERE task_id = ANY ($1)
