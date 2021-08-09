@@ -7,11 +7,13 @@ import {
 } from 'graphql';
 
 import QueryType from './queries';
+import MutationType from './mutations';
 
 // defining new object type
 
 export const schema = new GraphQLSchema({
   query: QueryType,
+  mutation: MutationType,
 });
 /* 
 type Query {

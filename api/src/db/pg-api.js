@@ -1,5 +1,6 @@
 // api\src\db\pg-api.js
 
+import { randomString } from '../utils';
 import pgClient from './pg-client';
 import sqls from './sqls';
 
@@ -9,6 +10,76 @@ const pgApiWrapper = async () => {
     pgPool.query(text, Object.values(params));
 
   return {
+    mutators: {
+      userLogin: async ({ input }) => {
+        const payload = { errors: [] };
+        if (!input.username || !input.password)
+          payload.errors.push({
+            message: 'Invalid username or password',
+          });
+
+        if (payload.errors.length === 0) {
+          const pgResp = await pgQuery(sqls.userFromCredentials, {
+            $1: input.username.toLowerCase(),
+            $2: input.password,
+          });
+
+          const user = pgResp.rows[0];
+
+          if (user) {
+            const authToken = randomString();
+            // here we just update the stuff
+            await pgQuery(sqls.userUpdateAuthToken, {
+              $1: user.id,
+              $2: authToken,
+            });
+
+            payload.user = user;
+            payload.authToken = authToken;
+          } else {
+            payload.errors.push({
+              message: 'Invalid username or password',
+            });
+          }
+        }
+
+        return payload;
+      },
+      userCreate: async ({ input }) => {
+        console.log('what');
+        // this payload always gets returned
+        // but, we will conditionally add properties to it
+        // errors allways exists
+        const payload = { errors: [] };
+
+        if (input.password.length < 6)
+          payload.errors.push({
+            message: 'Use a stronger password',
+          });
+
+        if (payload.errors.length === 0) {
+          // this will return just a simple random string
+          const authToken = randomString();
+
+          const pgResp = await pgQuery(sqls.userInsert, {
+            $1: input.username.toLowerCase(),
+            // this is such a cool way to hash it - no need for bcrypt
+            // but how to check it when retrieving from db?
+            $2: input.password,
+            $3: input.firstName,
+            $4: input.lastName,
+            $5: authToken,
+          });
+
+          if (pgResp.rows[0]) {
+            payload.user = pgResp.rows[0];
+            payload.authToken = authToken;
+          }
+        }
+
+        return payload;
+      },
+    },
     searchResults: async (searchTerms) => {
       const results = searchTerms.map(async (searchTerm) => {
         const pgResp = await pgQuery(sqls.searchResults, {

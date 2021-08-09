@@ -9,8 +9,9 @@ import morgan from 'morgan';
 import * as config from './config';
 import { schema } from './schema';
 // import pgClient from './db/pg-client';
-import pgApiWrapper from './db/pg-api';
 import DataLoader from 'dataloader';
+import pgApiWrapper from './db/pg-api';
+import mongoApiWrapper from './db/mongo-api';
 
 // const executeGraphQLRequest = async (request) => {
 //   const resp = await graphql(schema, request, rootValue);
@@ -24,6 +25,7 @@ import DataLoader from 'dataloader';
 async function main() {
   // const { pgPool } = await pgClient();
   const pgApi = await pgApiWrapper();
+  const mongoApi = await mongoApiWrapper();
   const server = express();
   server.use(cors());
   server.use(morgan('dev'));
@@ -38,7 +40,14 @@ async function main() {
     '/',
 
     (req, res) => {
+      const mutators = {
+        ...pgApi.mutators,
+        ...mongoApi.mutators,
+      };
       const loaders = {
+        detailList: new DataLoader((approachIds) =>
+          mongoApi.detailList(approachIds)
+        ),
         users: new DataLoader((userIds) => pgApi.usersInfo(userIds)),
         approachList: new DataLoader((taskIds) => pgApi.approachList(taskIds)),
         tasks: new DataLoader((taskIds) => pgApi.tasksInfo(taskIds)),
@@ -55,8 +64,12 @@ async function main() {
           // pgPool,
           pgApi,
           loaders,
+          mutators,
         },
-        graphiql: true,
+        // graphiql: true, -> not a boolean anymore
+        graphiql: {
+          headerEditorEnabled: true,
+        },
         customFormatErrorFn: (err) => {
           const errorReport = {
             message: err.message,
