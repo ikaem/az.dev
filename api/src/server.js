@@ -39,21 +39,41 @@ async function main() {
   server.use(
     '/',
 
-    (req, res) => {
+    async (req, res) => {
+      const authToken =
+        req && req.headers && req.headers.authorization
+          ? req.headers.authorization.slice(7)
+          : null;
+
+      const currentUser = await pgApi.userFromAuthToken(authToken);
+
+      // this is cool, because this null auth token can make the current user null? and we are ok with null
+      if (authToken && !currentUser) {
+        // i dont get why would this be resolved as part of GQL server? it never reaches the gql implementation?
+        return res.status(401).send({
+          errors: [{ message: 'Invalid access token' }],
+        });
+      }
+
       const mutators = {
         ...pgApi.mutators,
         ...mongoApi.mutators,
       };
       const loaders = {
+        tasksForUsers: new DataLoader((userIds) =>
+          pgApi.tasksForUsers(userIds)
+        ),
         detailList: new DataLoader((approachIds) =>
           mongoApi.detailList(approachIds)
         ),
         users: new DataLoader((userIds) => pgApi.usersInfo(userIds)),
         approachList: new DataLoader((taskIds) => pgApi.approachList(taskIds)),
-        tasks: new DataLoader((taskIds) => pgApi.tasksInfo(taskIds)),
+        tasks: new DataLoader((taskIds) =>
+          pgApi.tasksInfo({ taskIds, currentUser })
+        ),
         tasksByTypes: new DataLoader((types) => pgApi.tasksByTypes(types)),
         searchResults: new DataLoader((searchTerms) =>
-          pgApi.searchResults(searchTerms)
+          pgApi.searchResults({ searchTerms, currentUser })
         ),
       };
 
@@ -65,6 +85,8 @@ async function main() {
           pgApi,
           loaders,
           mutators,
+          // I like this
+          currentUser,
         },
         // graphiql: true, -> not a boolean anymore
         graphiql: {

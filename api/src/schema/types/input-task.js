@@ -1,0 +1,27 @@
+// api\src\schema\types\input-task.js
+
+import {
+  GraphQLBoolean,
+  GraphQLInputObjectType,
+  GraphQLList,
+  GraphQLNonNull,
+  GraphQLString,
+} from 'graphql';
+
+const TaskInput = new GraphQLInputObjectType({
+  name: 'TaskInput',
+  fields: () => ({
+    content: { type: new GraphQLNonNull(GraphQLString) },
+    tags: {
+      type: new GraphQLNonNull(
+        //   note constructors when not leaf, or not primitive type
+        new GraphQLList(new GraphQLNonNull(GraphQLString))
+      ),
+    },
+    isPrivate: {
+      type: new GraphQLNonNull(GraphQLBoolean),
+    },
+  }),
+});
+
+export default TaskInput;

@@ -69,7 +69,9 @@ export const Task = new GraphQLObjectType({
         // return pgApi.userInfo(source.userId);
         // so here we pass just one id
         // but this will be batched into a single sql statement
-        return loaders.users.load(source.userId);
+        const test = loaders.users.load(source.userId);
+        console.log({ test });
+        return test;
         // return extractPrefixedColumns({ prefixedObject, prefix: 'author' });
       },
     },

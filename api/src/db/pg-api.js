@@ -11,6 +11,29 @@ const pgApiWrapper = async () => {
 
   return {
     mutators: {
+      taskCreate: async ({ input, currentUser }) => {
+        const payload = { errors: [] };
+        if (input.content.length < 15)
+          payload.errors.push({
+            message: 'Text is too short',
+          });
+
+        if (payload.errors.length === 0) {
+          console.log({ currentUser });
+          const pgResp = await pgQuery(sqls.taskInsert, {
+            $1: currentUser.id,
+            $2: input.content,
+            $3: input.tags.join(','),
+            $4: input.isPrivate,
+          });
+          // so it actually does some returning
+          if (pgResp.rows[0]) {
+            payload.task = pgResp.rows[0];
+          }
+        }
+
+        return payload;
+      },
       userLogin: async ({ input }) => {
         const payload = { errors: [] };
         if (!input.username || !input.password)
@@ -45,6 +68,7 @@ const pgApiWrapper = async () => {
 
         return payload;
       },
+
       userCreate: async ({ input }) => {
         console.log('what');
         // this payload always gets returned
@@ -80,11 +104,33 @@ const pgApiWrapper = async () => {
         return payload;
       },
     },
-    searchResults: async (searchTerms) => {
+
+    tasksForUsers: async (userIds) => {
+      const pgResp = await pgQuery(sqls.tasksForUsers, {
+        $1: userIds,
+      });
+
+      // map over this becuase this is in the correct order
+      return userIds.map((userId) => {
+        return pgResp.rows.filter((row) => userId === row.userId);
+      });
+    },
+
+    userFromAuthToken: async (authToken) => {
+      // note us returning null
+      if (!authToken) return null;
+
+      const pgResp = await pgQuery(sqls.userFromAuthToken, {
+        $1: authToken,
+      });
+
+      return pgResp.rows[0];
+    },
+    searchResults: async ({ searchTerms, currentUser }) => {
       const results = searchTerms.map(async (searchTerm) => {
         const pgResp = await pgQuery(sqls.searchResults, {
           $1: searchTerm,
-          $2: null,
+          $2: currentUser ? currentUser.id : null,
         });
         // this bascially returns an array of results of each item in the searchTerms array
         return pgResp.rows;
@@ -116,11 +162,11 @@ const pgApiWrapper = async () => {
       return pgResp.rows[0];
     },
 
-    tasksInfo: async (taskIds) => {
+    tasksInfo: async ({ taskIds, currentUser }) => {
       console.log('taskIds', taskIds);
       const pgResp = await pgQuery(sqls.tasksFromIds, {
         $1: taskIds,
-        $2: null,
+        $2: currentUser ? currentUser.id : null,
       });
 
       return taskIds.map((taskId) => {

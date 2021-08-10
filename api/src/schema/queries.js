@@ -13,10 +13,17 @@ import { NumbersInRange } from './types';
 import { numbersInRangeObject } from '../utils';
 import { Task } from './types/task';
 import SearchResultItem from './types/search-result-item';
+import User, { Me } from './types/user';
 
 const QueryType = new GraphQLObjectType({
   name: 'Query',
   fields: {
+    me: {
+      type: Me,
+      resolve: async (source, args, { currentUser }) => {
+        return currentUser;
+      },
+    },
     search: {
       type: new GraphQLNonNull(
         new GraphQLList(new GraphQLNonNull(SearchResultItem))
