@@ -1,0 +1,16 @@
+// api\src\schema\types\input-approach-detail.js
+
+import { GraphQLInputObjectType, GraphQLNonNull, GraphQLString } from 'graphql';
+import ApproachDetailCategory from './approach-detail-category';
+
+const ApproachDetailInput = new GraphQLInputObjectType({
+  name: 'ApproachDetailInput',
+  fields: () => ({
+    content: { type: new GraphQLNonNull(GraphQLString) },
+    category: {
+      type: new GraphQLNonNull(ApproachDetailCategory),
+    },
+  }),
+});
+
+export default ApproachDetailInput;

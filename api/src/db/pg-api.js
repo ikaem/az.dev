@@ -11,6 +11,75 @@ const pgApiWrapper = async () => {
 
   return {
     mutators: {
+      userDelete: async ({ currentUser }) => {
+        const payload = { errors: [] };
+        try {
+          await pgQuery(sqls.userDelete, {
+            $1: currentUser.id,
+          });
+
+          payload.deletedUserId = currentUser.id;
+        } catch (err) {
+          payload.errors.push({
+            message: 'Unable to delete the user',
+          });
+        }
+
+        return payload;
+      },
+      approachVote: async ({ approachId, input }) => {
+        const payload = { errors: [] };
+        const pgResp = await pgQuery(sqls.approachVote, {
+          $1: approachId,
+          $2: input.up ? 1 : -1,
+        });
+
+        if (pgResp.rows[0]) {
+          payload.approach = pgResp.rows[0];
+        }
+
+        return payload;
+      },
+      approachCreate: async ({ taskId, input, currentUser, mutators }) => {
+        console.log('taskId', typeof taskId);
+        const payload = { errors: [] };
+        // there is no adding anything to the errors, though
+        if (payload.errors.length === 0) {
+          const pgResp = await pgQuery(sqls.approachInsert, {
+            $1: currentUser.id,
+            $2: input.content,
+            $3: taskId,
+          });
+
+          //   // here we make sure that the data exists
+          if (pgResp.rows[0]) {
+            console.log('hellooooooooooooooo', pgResp.rows[0]);
+            payload.approach = pgResp.rows[0];
+
+            /* TODo THIS IS THE ISSUE HERE */
+            // payload.approach = {
+            //   id: 2,
+            //   content: 'something',
+            //   voteCount: 3,
+            //   userId: 1,
+            //   author: {
+            //     username: 'what',
+            //   },
+            // };
+
+            await pgQuery(sqls.approachCountIncrement, {
+              $1: taskId,
+            });
+            // this still needs to be implemented
+            await mutators.approachDetailCreate(
+              Number(payload.approach.id),
+              input.detailList
+            );
+          }
+        }
+
+        return payload;
+      },
       taskCreate: async ({ input, currentUser }) => {
         const payload = { errors: [] };
         if (input.content.length < 15)

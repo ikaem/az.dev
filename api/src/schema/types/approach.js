@@ -27,8 +27,10 @@ const Approach = new GraphQLObjectType({
       type: new GraphQLNonNull(
         new GraphQLList(new GraphQLNonNull(ApproachDetail))
       ),
-      resolve: (source, args, { loaders }) =>
-        loaders.detailList.load(source.id),
+      resolve: (source, args, { loaders }) => {
+        console.log({ source });
+        return loaders.detailList.load(source.id);
+      },
     },
     id: { type: new GraphQLNonNull(GraphQLID) },
     taskId: { type: new GraphQLNonNull(GraphQLID) },
@@ -43,7 +45,8 @@ const Approach = new GraphQLObjectType({
       //   resolve: (source, args, { pgApi }) => {
       resolve: (source, args, { loaders }) => {
         // return pgApi.userInfo(source.userId);
-        return loaders.users.load(source, userId);
+        console.log('sourceeeeeeeeee', source);
+        return loaders.users.load(source.userId);
       },
     },
     task: {

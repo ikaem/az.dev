@@ -20,7 +20,23 @@ const mongoApiWrapper = async () => {
 
   //   now we return methods - batch loading functions
   return {
-    mutators: {},
+    mutators: {
+      approachDetailCreate: async (approachId, detailsInput) => {
+        const details = {};
+        console.log('approachIdsssssssss');
+
+        detailsInput.forEach(({ content, category }) => {
+          // no ifs here
+          details[category] = details[category] || [];
+          details[category].push(content);
+        });
+
+        return mdb.collection('approachDetails').insertOne({
+          pgId: approachId,
+          ...details,
+        });
+      },
+    },
     detailList: async (approachIds) => {
       const mongoDocuments = await mdbFindDocumentsByField({
         collectionName: 'approachDetails',
@@ -49,7 +65,7 @@ const mongoApiWrapper = async () => {
             // nice techique
             ...explanations.map((explanationText) => ({
               content: explanationText,
-              category: 'EXPLANATION',
+              category: 'explanations',
             }))
           );
         }
@@ -58,7 +74,7 @@ const mongoApiWrapper = async () => {
           approachDetails.push(
             ...notes.map((noteText) => ({
               content: noteText,
-              category: 'NOTE',
+              category: 'notes',
             }))
           );
         }
@@ -67,7 +83,7 @@ const mongoApiWrapper = async () => {
           approachDetails.push(
             ...warnings.map((warningText) => ({
               content: warningText,
-              category: 'WARNING',
+              category: 'warnings',
             }))
           );
         }
