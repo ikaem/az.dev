@@ -36,7 +36,7 @@ const QueryType = new GraphQLObjectType({
       },
     },
 
-    tasksInfo: {
+    taskInfo: {
       type: Task,
       args: {
         id: {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import { useStore } from '../store';
 import Search from './Search';
-import TaskSummary from './TaskSummary';
+import TaskSummary, { TASK_SUMMARY_FRAGMENT } from './TaskSummary';
 
 /** GIA NOTES
  * Define GraphQL operations here...
@@ -29,11 +29,31 @@ const mockTasks = [
   },
 ];
 
+const TASK_MAIN_LIST = `
+  query TaskMainList {
+    taskMainList {
+      id
+      ...TaskSummary
+    }
+  }
+  ${TASK_SUMMARY_FRAGMENT}
+`;
+
 export default function Home() {
   const { request } = useStore();
   const [taskList, setTaskList] = useState(null);
 
+  // useEffect(() => {
+  //   request('{currentTime}').then(({ data }) => {
+  //     console.log('Server time is:', data.currentTime);
+  //   });
+  // }, []);
+
   useEffect(() => {
+    request(TASK_MAIN_LIST).then(({ data }) => {
+      console.log({ data });
+      setTaskList(data.taskMainList);
+    });
     /** GIA NOTES
      *
      *  1) Invoke the query to get list of latest Tasks
@@ -43,11 +63,11 @@ export default function Home() {
      *
      */
 
-    setTaskList(mockTasks); // TODO: Replace mockTasks with API_RESP_FOR_taskMainList
+    // setTaskList(mockTasks); // TODO: Replace mockTasks with API_RESP_FOR_taskMainList
   }, [request]);
 
   if (!taskList) {
-    return <div className="loading">Loading...</div>;
+    return <div className='loading'>Loading...</div>;
   }
 
   return (

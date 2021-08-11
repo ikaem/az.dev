@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 export default function Errors({ errors }) {
   if (!errors) {
@@ -6,7 +6,7 @@ export default function Errors({ errors }) {
   }
 
   return errors.map((uiError, i) => (
-    <div key={i} className="error">
+    <div key={i} className='error'>
       {uiError.message}
     </div>
   ));
