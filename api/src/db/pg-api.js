@@ -154,19 +154,33 @@ const pgApiWrapper = async () => {
           // this will return just a simple random string
           const authToken = randomString();
 
-          const pgResp = await pgQuery(sqls.userInsert, {
-            $1: input.username.toLowerCase(),
-            // this is such a cool way to hash it - no need for bcrypt
-            // but how to check it when retrieving from db?
-            $2: input.password,
-            $3: input.firstName,
-            $4: input.lastName,
-            $5: authToken,
-          });
+          try {
+            const pgResp = await pgQuery(sqls.userInsert, {
+              $1: input.username.toLowerCase(),
+              // this is such a cool way to hash it - no need for bcrypt
+              // but how to check it when retrieving from db?
+              $2: input.password,
+              $3: input.firstName,
+              $4: input.lastName,
+              $5: authToken,
+            });
 
-          if (pgResp.rows[0]) {
-            payload.user = pgResp.rows[0];
-            payload.authToken = authToken;
+            if (pgResp.rows[0]) {
+              payload.user = pgResp.rows[0];
+              payload.authToken = authToken;
+            }
+          } catch (e) {
+            // check if the issue is a cosntraint violation
+            if (
+              e.message ===
+              "duplicate key value violates unique constraint 'users_username_key'"
+            ) {
+              payload.errors.push({
+                message: 'This username is already in use',
+              });
+            } else {
+              throw e;
+            }
           }
         }
 
