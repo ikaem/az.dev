@@ -1,17 +1,34 @@
+import { gql } from '@apollo/client';
 import React, { useState, useEffect } from 'react';
 
 import { useStore } from '../store';
-import TaskSummary from './TaskSummary';
+import TaskSummary, { TASK_SUMMARY_FRAGMENT } from './TaskSummary';
 
 /** GIA NOTES
  * Define GraphQL operations here...
  */
 
+const MY_TASK_LIST = gql`
+  query myTaskList {
+    me {
+      taskList {
+        id
+        ...TaskSummary
+      }
+    }
+  }
+  ${TASK_SUMMARY_FRAGMENT}
+`;
+
 export default function MyTasks() {
-  const { request } = useStore();
+  const { query } = useStore();
   const [myTaskList, setMyTaskList] = useState(null);
 
   useEffect(() => {
+    query(MY_TASK_LIST).then(({ data }) => {
+      console.log({ data });
+      setMyTaskList(data.me.taskList);
+    });
     /** GIA NOTES
      *
      *  1) Invoke the query to get current user list of Tasks
@@ -22,10 +39,10 @@ export default function MyTasks() {
       setMyTaskList(API_RESP_FOR_userTaskList);
 
      */
-  }, [request]);
+  }, [query]);
 
   if (!myTaskList) {
-    return <div className="loading">Loading...</div>;
+    return <div className='loading'>Loading...</div>;
   }
 
   return (
@@ -33,7 +50,7 @@ export default function MyTasks() {
       <div>
         <h1>My Tasks</h1>
         {myTaskList.length === 0 && (
-          <div className="box box-primary">
+          <div className='box box-primary'>
             You have not created any Task entries yet
           </div>
         )}

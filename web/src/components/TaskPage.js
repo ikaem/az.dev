@@ -4,13 +4,40 @@ import { useStore } from '../store';
 import NewApproach from './NewApproach';
 import Approach, { APPROACH_FRAGMENT } from './Approach';
 import TaskSummary, { TASK_SUMMARY_FRAGMENT } from './TaskSummary';
+import {
+  disableExperimentalFragmentVariables,
+  gql,
+  useQuery,
+} from '@apollo/client';
 
 /** GIA NOTES
  * Define GraphQL operations here...
  */
 
-const TASK_INFO = `
-  query TaskInfo ($taskId: ID!) {
+export const FULL_TASK_FRAGMENT = gql`
+  fragment FullTaskData on Task {
+    id
+    ...TaskSummary
+    approachList {
+      id
+      ...ApproachFragment
+    }
+  }
+  ${TASK_SUMMARY_FRAGMENT}
+  ${APPROACH_FRAGMENT}
+`;
+
+const TEST_TASK_INFO = gql`
+  query taskInfo($taskId: ID!) {
+    taskInfo(id: $taskId) {
+      ...fullTaskData
+    }
+  }
+  ${FULL_TASK_FRAGMENT}
+`;
+
+const TASK_INFO = gql`
+  query TaskInfo($taskId: ID!) {
     taskInfo(id: $taskId) {
       id
       ...TaskSummary
@@ -46,39 +73,50 @@ const mockTaskInfo = {
 };
 
 export default function TaskPage({ taskId }) {
-  const { request, AppLink } = useStore();
-  const [taskInfo, setTaskInfo] = useState(null);
+  const { query, AppLink } = useStore();
+  // const [taskInfo, setTaskInfo] = useState(null);
   const [showAddApproach, setShowAddApproach] = useState(false);
   const [highlightedApproachId, setHighlightedApproachId] = useState();
 
-  useEffect(() => {
-    if (!taskInfo) {
-      request(TASK_INFO, { variables: { taskId } }).then(({ data }) => {
-        setTaskInfo(data.taskInfo);
-      });
+  const { error, loading, data } = useQuery(TASK_INFO, {
+    variables: { taskId },
+  });
 
-      /** GIA NOTES
-       *
-       *  1) Invoke the query to get the information of a Task object:
-       *     (You can't use `await` here but `promise.then` is okay)
-       *
-       *  2) Change the line below to use the returned data instead of mockTaskInfo:
-       *
-       */
-      // setTaskInfo(mockTaskInfo); // TODO: Replace mockTaskInfo with API_RESP_FOR_taskInfo
-    }
-  }, [taskId, taskInfo, request]);
+  if (error) return <div className='error'>{error.message}</div>;
+  if (loading) return <div className='loading'>Loading...</div>;
 
-  if (!taskInfo) {
-    return <div className='loading'>Loading...</div>;
-  }
+  const { taskInfo } = data;
 
-  const handleAddNewApproach = (newApproach) => {
-    setTaskInfo((pTask) => ({
-      ...pTask,
-      approachList: [newApproach, ...pTask.approachList],
-    }));
-    setHighlightedApproachId(newApproach.id);
+  // useEffect(() => {
+  //   if (!taskInfo) {
+  //     query(TASK_INFO, { variables: { taskId } }).then(({ data }) => {
+  //       setTaskInfo(data.taskInfo);
+  //     });
+
+  //     /** GIA NOTES
+  //      *
+  //      *  1) Invoke the query to get the information of a Task object:
+  //      *     (You can't use `await` here but `promise.then` is okay)
+  //      *
+  //      *  2) Change the line below to use the returned data instead of mockTaskInfo:
+  //      *
+  //      */
+  //     // setTaskInfo(mockTaskInfo); // TODO: Replace mockTaskInfo with API_RESP_FOR_taskInfo
+  //   }
+  // }, [taskId, taskInfo, query]);
+
+  // if (!taskInfo) {
+  //   return <div className='loading'>Loading...</div>;
+  // }
+
+  // const handleAddNewApproach = (newApproach) => {
+  const handleAddNewApproach = (addNewApproach) => {
+    // setTaskInfo((pTask) => ({
+    //   ...pTask,
+    //   approachList: [newApproach, ...pTask.approachList],
+    // }));
+    const newApproachId = addNewApproach(taskInfo);
+    setHighlightedApproachId(newApproachId);
     setShowAddApproach(false);
   };
 

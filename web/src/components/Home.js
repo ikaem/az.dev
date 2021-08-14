@@ -1,3 +1,4 @@
+import { gql, useQuery } from '@apollo/client';
 import React, { useState, useEffect } from 'react';
 
 import { useStore } from '../store';
@@ -29,7 +30,7 @@ const mockTasks = [
   },
 ];
 
-const TASK_MAIN_LIST = `
+const TASK_MAIN_LIST = gql`
   query TaskMainList {
     taskMainList {
       id
@@ -40,8 +41,9 @@ const TASK_MAIN_LIST = `
 `;
 
 export default function Home() {
-  const { request } = useStore();
-  const [taskList, setTaskList] = useState(null);
+  const { loading, data, error } = useQuery(TASK_MAIN_LIST);
+  // const { query } = useStore();
+  // const [taskList, setTaskList] = useState(null);
 
   // useEffect(() => {
   //   request('{currentTime}').then(({ data }) => {
@@ -50,10 +52,10 @@ export default function Home() {
   // }, []);
 
   useEffect(() => {
-    request(TASK_MAIN_LIST).then(({ data }) => {
-      console.log({ data });
-      setTaskList(data.taskMainList);
-    });
+    // query(TASK_MAIN_LIST).then(({ data }) => {
+    //   console.log({ data });
+    //   setTaskList(data.taskMainList);
+    // });
     /** GIA NOTES
      *
      *  1) Invoke the query to get list of latest Tasks
@@ -62,20 +64,23 @@ export default function Home() {
      *  2) Change the setTaskList call below to use the returned data:
      *
      */
-
     // setTaskList(mockTasks); // TODO: Replace mockTasks with API_RESP_FOR_taskMainList
-  }, [request]);
+    // }, [query]);
+  }, []);
 
-  if (!taskList) {
-    return <div className='loading'>Loading...</div>;
-  }
+  // if (!taskList) {
+  //   return <div className='loading'>Loading...</div>;
+  // }
+  if (loading) return <div className='loading'>Loading</div>;
+  if (error) return <div className='error'>Error</div>;
 
   return (
     <div>
       <Search />
       <div>
         <h1>Latest</h1>
-        {taskList.map((task) => (
+        {/* {taskList.map((task) => ( */}
+        {data.taskMainList.map((task) => (
           <TaskSummary key={task.id} task={task} link={true} />
         ))}
       </div>

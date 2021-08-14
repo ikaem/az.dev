@@ -1,3 +1,4 @@
+import { gql, useMutation } from '@apollo/client';
 import React, { useState } from 'react';
 
 import { useStore } from '../store';
@@ -7,11 +8,13 @@ import Errors from './Errors';
  * Define GraphQL operations here...
  */
 
-export const APPROACH_FRAGMENT = `
+export const APPROACH_FRAGMENT = gql`
   fragment ApproachFragment on Approach {
     content
     voteCount
-    author { username }
+    author {
+      username
+    }
     detailList {
       content
       category
@@ -19,31 +22,56 @@ export const APPROACH_FRAGMENT = `
   }
 `;
 
+const APPROACH_VOTE = gql`
+  mutation ApproachVote($approachId: ID!, $up: Boolean!) {
+    approachVote(approachId: $approachId, input: { up: $up }) {
+      errors {
+        message
+      }
+      updatedApproach: approach {
+        id
+        voteCount
+      }
+    }
+  }
+`;
+
 export default function Approach({ approach, isHighlighted }) {
-  const { request } = useStore();
+  const { mutate } = useStore();
   const [uiErrors, setUIErrors] = useState();
   const [voteCount, setVoteCount] = useState(approach.voteCount);
 
+  const [submitVote, { error, loading }] = useMutation(APPROACH_VOTE);
+
+  if (error) return <div className='error'>{error.message}</div>;
+
   const handleVote = (direction) => async (event) => {
     event.preventDefault();
-    /** GIA NOTES
-     *
-     * 1) Invoke the mutation to vote on an approach:
-     *   - Variable `direction` is either 'UP' or 'DOWN'
-     * 2) Use the code below after that. It needs these variables:
-     *   - `errors` is an array of objects of type UserError
-     *   - `newVoteCount` is the new count after this vote is cast
 
-      if (errors.length > 0) {
-        return setUIErrors(errors);
-      }
-      setVoteCount(newVoteCount);
+    // const { data, errors: rootErrors } = await mutate(APPROACH_VOTE, {
+    const { data, errors: rootErrors } = await submitVote({
+      variables: {
+        approachId: approach.id,
+        up: direction === 'UP',
+      },
+    });
 
-    */
+    if (rootErrors) return setUIErrors(rootErrors);
+
+    console.log('data returned after submit vote function', { data });
+
+    // const { errors, updatedApproach } = data.approachVote;
+    // if (errors.length > 0) return setUIErrors(errors);
+
+    // setVoteCount(updatedApproach.voteCount);
   };
 
   const renderVoteButton = (direction) => (
-    <button className='border-none' onClick={handleVote(direction)}>
+    <button
+      disabled={loading}
+      className='border-none'
+      onClick={handleVote(direction)}
+    >
       <svg
         aria-hidden='true'
         width='24'
@@ -65,7 +93,8 @@ export default function Approach({ approach, isHighlighted }) {
       <div className='approach'>
         <div className='vote'>
           {renderVoteButton('UP')}
-          {voteCount}
+          {/* {voteCount} */}
+          {approach.voteCount}
           {renderVoteButton('DOWN')}
         </div>
         <div className='main'>

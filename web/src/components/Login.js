@@ -1,3 +1,4 @@
+import { gql, useMutation } from '@apollo/client';
 import React, { useState } from 'react';
 
 import { useStore } from '../store';
@@ -9,7 +10,7 @@ import Errors from './Errors';
 
 // we define input as being AuhtInput type here
 // how do we know this on frontend? by using GraphiQL
-const USER_LOGIN = `
+const USER_LOGIN = gql`
   mutation UserLogin($input: AuthInput!) {
     userLogin(input: $input) {
       errors {
@@ -25,17 +26,21 @@ const USER_LOGIN = `
 `;
 
 export default function Login() {
-  const { request, setLocalAppState } = useStore();
+  const { mutate, setLocalAppState } = useStore();
+
+  const [loginUser, { error, loading }] = useMutation(USER_LOGIN);
+
   const [uiErrors, setUIErrors] = useState();
+
+  // this error is some error that might happen when start mutation
+  if (error) return <div className='error'>{error.message}</div>;
+
   const handleLogin = async (event) => {
     event.preventDefault();
     const input = event.target.elements;
-    // this is some kind of list of elemnts
-    console.log({ input });
-    console.log(input[0].value);
-    console.log(input.username);
 
-    const { data } = await request(USER_LOGIN, {
+    // const { data } = await mutate(USER_LOGIN, {
+    const { data, errors: rootErrors } = await loginUser(USER_LOGIN, {
       variables: {
         input: {
           username: input.username.value,
@@ -44,11 +49,14 @@ export default function Login() {
       },
     });
 
+    // this error might happen on the root - some sql issue
+    if (rootErrors) {
+      return setUIErrors(rootErrors);
+    }
+    // and this error might be returned as part of the response - bad password or something
     const { errors, user, authToken } = data.userLogin;
 
-    if (errors.length > 0) {
-      return setUIErrors(errors);
-    }
+    if (errors.length > 0) return setUIErrors(errors);
 
     user.authToken = authToken;
     window.localStorage.setItem('azdev:user', JSON.stringify(user));
@@ -75,6 +83,7 @@ export default function Login() {
 
     */
   };
+
   return (
     <div className='sm-container'>
       <form method='POST' onSubmit={handleLogin}>
@@ -92,8 +101,8 @@ export default function Login() {
         </div>
         <Errors errors={uiErrors} />
         <div className='spaced'>
-          <button className='btn btn-primary' type='submit'>
-            Login
+          <button className='btn btn-primary' type='submit' disabled={loading}>
+            Login {loading && <i className='spinner'>...</i>}
           </button>
         </div>
       </form>

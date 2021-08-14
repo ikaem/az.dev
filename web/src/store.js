@@ -3,6 +3,14 @@ import fetch from 'cross-fetch';
 
 import * as config from './config';
 
+import { ApolloClient, HttpLink, InMemoryCache } from '@apollo/client';
+import { setContext } from '@apollo/client/link/context';
+
+const httpLink = new HttpLink({ uri: config.GRAPHQL_SERVER_URL });
+const cache = new InMemoryCache();
+// const client = new ApolloClient({ link: httpLink, cache });
+const client = new ApolloClient({ cache });
+
 const initialLocalAppState = {
   component: { name: 'Home', props: {} },
   user: JSON.parse(window.localStorage.getItem('azdev:user')),
@@ -14,7 +22,25 @@ export const useStoreObject = () => {
   // This state object is used to manage
   // all local app state elements (like user/component)
   const [state, setState] = useState(() => initialLocalAppState);
+  const authLink = setContext((_, { headers }) => {
+    return {
+      headers: {
+        ...headers,
+        authorization: state.user ? `Bearer ${state.user.authToken}` : '',
+      },
+    };
+  });
+  client.setLink(authLink.concat(httpLink));
 
+  const query = async (query, { variables } = {}) => {
+    const resp = await client.query({ query, variables });
+    return resp;
+  };
+
+  const mutate = async (mutation, { variables } = {}) => {
+    const resp = await client.mutate({ mutation, variables });
+    return resp;
+  };
   // This function can be used with 1 or more
   // state elements. For example:
   // const user = useLocalAppState('user');
@@ -35,6 +61,11 @@ export const useStoreObject = () => {
     setState((currentState) => {
       return { ...currentState, ...newState };
     });
+
+    // this would basically remove all cached stuff whenever we change page?
+    if (newState.user || newState.user === null) {
+      client.resetStore();
+    }
   };
 
   // This is a component that can be used in place of
@@ -90,7 +121,10 @@ export const useStoreObject = () => {
     useLocalAppState,
     setLocalAppState,
     AppLink,
-    request,
+    // request,
+    query,
+    mutate,
+    client,
   };
 };
 

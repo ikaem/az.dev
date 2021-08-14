@@ -1,3 +1,4 @@
+import { gql } from '@apollo/client';
 import React, { useState } from 'react';
 
 import { useStore } from '../store';
@@ -7,7 +8,7 @@ import Errors from './Errors';
  * Define GraphQL operations here...
  */
 
-const USER_CREATE = `
+const USER_CREATE = gql`
   mutation UserCreate($input: UserInput!) {
     userCreate(input: $input) {
       errors {
@@ -23,7 +24,7 @@ const USER_CREATE = `
 `;
 
 export default function Signup() {
-  const { request, setLocalAppState } = useStore();
+  const { mutate, setLocalAppState } = useStore();
   const [uiErrors, setUIErrors] = useState();
 
   const handleSignup = async (event) => {
@@ -33,7 +34,7 @@ export default function Signup() {
       return setUIErrors([{ message: 'Password mismatch' }]);
     }
 
-    const { data, errors: rootErrors } = await request(USER_CREATE, {
+    const { data, errors: rootErrors } = await mutate(USER_CREATE, {
       variables: {
         // note the input part
         input: {
