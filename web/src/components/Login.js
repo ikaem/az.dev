@@ -28,7 +28,11 @@ const USER_LOGIN = gql`
 export default function Login() {
   const { mutate, setLocalAppState } = useStore();
 
-  const [loginUser, { error, loading }] = useMutation(USER_LOGIN);
+  const [loginUser, { error, loading }] = useMutation(USER_LOGIN, {
+    errorPolicy: 'all',
+  });
+
+  console.log(error.networkError);
 
   const [uiErrors, setUIErrors] = useState();
 

@@ -41,7 +41,12 @@ const TASK_MAIN_LIST = gql`
 `;
 
 export default function Home() {
-  const { loading, data, error } = useQuery(TASK_MAIN_LIST);
+  const { loading, data, error, refetch } = useQuery(TASK_MAIN_LIST, {
+    // pollInterval: 1000,
+    // fetchPolicy: 'network-only',
+  });
+
+  console.log({ data });
   // const { query } = useStore();
   // const [taskList, setTaskList] = useState(null);
 
@@ -79,6 +84,7 @@ export default function Home() {
       <Search />
       <div>
         <h1>Latest</h1>
+        <button onClick={() => refetch()}>Refetch</button>
         {/* {taskList.map((task) => ( */}
         {data.taskMainList.map((task) => (
           <TaskSummary key={task.id} task={task} link={true} />

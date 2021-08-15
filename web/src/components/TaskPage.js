@@ -109,6 +109,15 @@ export default function TaskPage({ taskId }) {
   //   return <div className='loading'>Loading...</div>;
   // }
 
+  // If you provide a link chain to ApolloClient, you
+  // don't provide the `uri` option.
+  // const client = new ApolloClient({
+  //   // The `from` function combines an array of individual links
+  //   // into a link chain
+  //   link: from([errorLink, httpLink]),
+  //   cache: new InMemoryCache(),
+  // });
+
   // const handleAddNewApproach = (newApproach) => {
   const handleAddNewApproach = (addNewApproach) => {
     // setTaskInfo((pTask) => ({
